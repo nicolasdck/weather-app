@@ -11,10 +11,24 @@ import {
 import { getErrorMessage, isAbortError } from '../services/weatherApi';
 import type { WeatherLocation } from '../types/weather';
 
-const BASEMAP_URL =
-	'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const BASEMAP_ATTRIBUTION =
-	'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// Fond de carte : CARTO sombre si une clé est fournie (VITE_CARTO_KEY, gratuite sur
+// carto.com/basemaps/apikey), sinon OpenStreetMap, sans clé, assombri en CSS.
+const CARTO_KEY: string | undefined = import.meta.env.VITE_CARTO_KEY;
+const BASEMAP = CARTO_KEY
+	? {
+			url: `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CARTO_KEY)}`,
+			subdomains: 'abcd',
+			className: '',
+			attribution:
+				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+		}
+	: {
+			url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+			subdomains: '',
+			className: 'radar-basemap-dark',
+			attribution:
+				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+		};
 const RADAR_ATTRIBUTION =
 	'Radar : <a href="https://www.rainviewer.com">RainViewer</a>';
 
@@ -64,9 +78,10 @@ export default function RadarModal({
 			maxZoom: MAX_ZOOM,
 			zoomControl: false,
 		});
-		new L.TileLayer(BASEMAP_URL, {
-			attribution: BASEMAP_ATTRIBUTION,
-			subdomains: 'abcd',
+		new L.TileLayer(BASEMAP.url, {
+			attribution: BASEMAP.attribution,
+			subdomains: BASEMAP.subdomains,
+			className: BASEMAP.className,
 			maxZoom: MAX_ZOOM,
 		}).addTo(map);
 		new L.CircleMarker([latitude, longitude], {
