@@ -77,24 +77,23 @@ export function CurrentWeather({
 
   return (
     <GlassCard className="p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-white">
-            <MapPin className="size-5 shrink-0 text-white/70" aria-hidden="true" />
-            <span className="truncate">{location.name}</span>
-          </h1>
-          {subtitle && <p className="mt-0.5 truncate text-sm text-white/70">{subtitle}</p>}
-        </div>
+      <h1 className="flex items-start gap-2 text-2xl font-semibold text-white">
+        <MapPin className="mt-1.5 size-5 shrink-0 text-white/70" aria-hidden="true" />
+        <span className="min-w-0 wrap-break-word">{location.name}</span>
+      </h1>
+      {subtitle && <p className="mt-0.5 text-sm wrap-break-word text-white/70">{subtitle}</p>}
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white">
+          {current.isDay ? (
+            <Sun className="size-3.5 text-amber-300" aria-hidden="true" />
+          ) : (
+            <Moon className="size-3.5 text-indigo-200" aria-hidden="true" />
+          )}
+          {current.isDay ? 'Jour' : 'Nuit'} · {formatClock(current.time)}
+        </span>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white">
-            {current.isDay ? (
-              <Sun className="size-3.5 text-amber-300" aria-hidden="true" />
-            ) : (
-              <Moon className="size-3.5 text-indigo-200" aria-hidden="true" />
-            )}
-            {current.isDay ? 'Jour' : 'Nuit'} · {formatClock(current.time)}
-          </span>
           <button
             type="button"
             onClick={onRefresh}
