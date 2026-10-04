@@ -182,15 +182,14 @@ export interface WeatherData {
   fetchedAt: number
 }
 
-export type WeatherStatus = 'idle' | 'loading' | 'success' | 'error'
+export type WeatherStatus = 'loading' | 'success' | 'error'
 
-export interface WeatherState {
+/** État de chargement de la météo d'une ville enregistrée. */
+export interface WeatherEntry {
   status: WeatherStatus
-  location: WeatherLocation | null
+  /** Conservé pendant une actualisation, pour ne pas vider l'écran. */
   data: WeatherData | null
   error: string | null
-  /** Message d'information affiché dans l'état vide (ex. géolocalisation refusée). */
-  notice: string | null
 }
 
 export type WeatherApiErrorCode = 'network' | 'http' | 'not_found' | 'invalid' | 'aborted'

@@ -14,6 +14,8 @@ interface SearchBarProps {
   /** Appelé quand l'utilisateur valide un texte sans choisir de suggestion. */
   onSubmitQuery: (query: string) => void
   onLocate: () => void
+  /** Géolocalisation ou recherche par nom en cours. */
+  isBusy?: boolean
 }
 
 function describeResult(result: GeocodingResult): string {
@@ -22,7 +24,7 @@ function describeResult(result: GeocodingResult): string {
     .join(', ')
 }
 
-export function SearchBar({ onSelect, onSubmitQuery, onLocate }: SearchBarProps) {
+export function SearchBar({ onSelect, onSubmitQuery, onLocate, isBusy = false }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<GeocodingResult[]>([])
   const [status, setStatus] = useState<SuggestionStatus>('idle')
@@ -156,8 +158,8 @@ export function SearchBar({ onSelect, onSubmitQuery, onLocate }: SearchBarProps)
             onChange={(event) => handleChange(event.target.value)}
             onFocus={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
-            placeholder="Rechercher une ville…"
-            aria-label="Rechercher une ville"
+            placeholder="Ajouter une ville…"
+            aria-label="Rechercher une ville à ajouter"
             role="combobox"
             aria-expanded={showPanel}
             aria-controls={listboxId}
@@ -188,11 +190,16 @@ export function SearchBar({ onSelect, onSubmitQuery, onLocate }: SearchBarProps)
         <button
           type="button"
           onClick={handleLocate}
+          disabled={isBusy}
           aria-label="Utiliser ma position"
           title="Utiliser ma position"
           className="grid size-12 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white/25 active:scale-95"
         >
-          <LocateFixed className="size-5" aria-hidden="true" />
+          {isBusy ? (
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+          ) : (
+            <LocateFixed className="size-5" aria-hidden="true" />
+          )}
         </button>
       </div>
 

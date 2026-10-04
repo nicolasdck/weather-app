@@ -10,6 +10,7 @@ import {
   Sunrise,
   Sunset,
   SunMedium,
+  Trash2,
   Wind,
 } from 'lucide-react'
 import type { WeatherData } from '../types/weather'
@@ -28,8 +29,13 @@ import { WeatherIcon } from './WeatherIcon'
 
 interface CurrentWeatherProps {
   data: WeatherData
+  isRefreshing?: boolean
   onRefresh: () => void
+  onRemove: () => void
 }
+
+const headerButtonClass =
+  'grid size-8 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20 active:scale-95'
 
 interface StatTileProps {
   icon: ReactNode
@@ -51,7 +57,12 @@ function StatTile({ icon, label, value, detail }: StatTileProps) {
   )
 }
 
-export function CurrentWeather({ data, onRefresh }: CurrentWeatherProps) {
+export function CurrentWeather({
+  data,
+  isRefreshing = false,
+  onRefresh,
+  onRemove,
+}: CurrentWeatherProps) {
   const { current, location, daily } = data
   const today = daily[0]
   const subtitle = formatLocationSubtitle(location)
@@ -87,11 +98,24 @@ export function CurrentWeather({ data, onRefresh }: CurrentWeatherProps) {
           <button
             type="button"
             onClick={onRefresh}
+            disabled={isRefreshing}
             aria-label="Actualiser"
             title="Actualiser"
-            className="grid size-8 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20 active:scale-95"
+            className={headerButtonClass}
           >
-            <RefreshCw className="size-3.5" aria-hidden="true" />
+            <RefreshCw
+              className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Retirer ${location.name}`}
+            title="Retirer cette ville"
+            className={headerButtonClass}
+          >
+            <Trash2 className="size-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>

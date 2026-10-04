@@ -1,4 +1,4 @@
-import { CloudOff, CloudSun, LocateFixed, RotateCcw } from 'lucide-react'
+import { CloudOff, CloudSun, LocateFixed, RotateCcw, Trash2 } from 'lucide-react'
 import { GlassCard } from './GlassCard'
 
 const buttonClass =
@@ -32,23 +32,40 @@ export function EmptyState({ notice, onLocate }: EmptyStateProps) {
 }
 
 interface ErrorMessageProps {
+  title?: string
   message: string
   onRetry?: () => void
+  onRemove?: () => void
 }
 
-export function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
+export function ErrorMessage({
+  title = 'Météo indisponible',
+  message,
+  onRetry,
+  onRemove,
+}: ErrorMessageProps) {
   return (
     <GlassCard className="flex flex-col items-center px-6 py-12 text-center">
       <CloudOff className="size-16 text-white" strokeWidth={1.25} aria-hidden="true" />
-      <h1 className="mt-4 text-xl font-semibold text-white">Météo indisponible</h1>
+      <h1 className="mt-4 text-xl font-semibold text-white">{title}</h1>
       <p role="alert" className="mt-2 max-w-sm text-sm text-white/80">
         {message}
       </p>
-      {onRetry && (
-        <button type="button" onClick={onRetry} className={`mt-6 ${buttonClass}`}>
-          <RotateCcw className="size-4" aria-hidden="true" />
-          Réessayer
-        </button>
+      {(onRetry || onRemove) && (
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {onRetry && (
+            <button type="button" onClick={onRetry} className={buttonClass}>
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Réessayer
+            </button>
+          )}
+          {onRemove && (
+            <button type="button" onClick={onRemove} className={buttonClass}>
+              <Trash2 className="size-4" aria-hidden="true" />
+              Retirer
+            </button>
+          )}
+        </div>
       )}
     </GlassCard>
   )
