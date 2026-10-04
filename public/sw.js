@@ -13,8 +13,9 @@ const SHELL_URLS = [
   '/icons/icon-512.png',
 ]
 
-const API_HOST = 'api.open-meteo.com'
-const MAX_API_ENTRIES = 20
+const API_HOSTS = ['api.open-meteo.com', 'air-quality-api.open-meteo.com']
+const MAX_API_ENTRIES = 40
+const CACHED_AT_HEADER = 'x-meteo-cached-at'
 
 // Pas de skipWaiting ici : la nouvelle version attend que l'utilisateur clique sur « Recharger ».
 self.addEventListener('install', (event) => {
@@ -65,7 +66,19 @@ async function handleApi(request) {
   try {
     const response = await fetch(request)
     if (response.ok) {
-      await cache.put(request, response.clone())
+      // La copie en cache porte la date de récupération : l'application sait ainsi
+      // qu'elle affiche des données hors ligne, et de quand elles datent.
+      const copy = response.clone()
+      const headers = new Headers(copy.headers)
+      headers.set(CACHED_AT_HEADER, String(Date.now()))
+      await cache.put(
+        request,
+        new Response(await copy.blob(), {
+          status: copy.status,
+          statusText: copy.statusText,
+          headers,
+        }),
+      )
       trimCache(API_CACHE, MAX_API_ENTRIES)
     }
     return response
@@ -100,7 +113,7 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith(handleNavigation(request))
-  } else if (url.hostname === API_HOST) {
+  } else if (API_HOSTS.includes(url.hostname)) {
     event.respondWith(handleApi(request))
   } else if (url.origin === self.location.origin) {
     event.respondWith(handleAsset(request))

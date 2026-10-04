@@ -6,6 +6,9 @@ import type { WeatherEntry, WeatherLocation } from '../types/weather'
 const STORAGE_KEY = 'meteo:cities'
 const LEGACY_STORAGE_KEY = 'meteo:last-location'
 const POSITION_KEY = 'position'
+/** Au-delà de ce délai, la météo affichée est rechargée automatiquement. */
+const STALE_AFTER_MS = 15 * 60 * 1000
+const STALE_CHECK_INTERVAL_MS = 60 * 1000
 
 interface CitiesState {
   locations: WeatherLocation[]
@@ -34,11 +37,8 @@ function readStoredCities(): CitiesState {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<CitiesState>
       const locations = Array.isArray(parsed.locations) ? parsed.locations.filter(isLocation) : []
-      const activeIndex = typeof parsed.activeIndex === 'number' ? parsed.activeIndex : 0
-      return {
-        locations,
-        activeIndex: Math.max(0, Math.min(activeIndex, locations.length - 1)),
-      }
+      // L'application s'ouvre toujours sur la première ville de la liste.
+      return { locations, activeIndex: 0 }
     }
 
     // Ancien format : une seule ville mémorisée.
@@ -66,9 +66,11 @@ export interface UseCitiesResult {
   /** Ajoute une ville et l'affiche ; si elle existe déjà, se contente de l'afficher. */
   addLocation: (location: WeatherLocation) => void
   removeLocation: (index: number) => void
+  /** Déplace une ville dans la liste ; la première est celle affichée à l'ouverture. */
+  moveLocation: (from: number, to: number) => void
   /** Géocode un nom de ville puis l'ajoute. */
   searchByName: (name: string) => void
-  /** Ajoute (ou met à jour) la position actuelle, placée en premier. */
+  /** Ajoute la position actuelle en tête de liste, ou la met à jour là où elle se trouve. */
   locate: () => void
   refresh: (index: number) => void
   dismissNotice: () => void
@@ -83,6 +85,8 @@ export function useCities(): UseCitiesResult {
 
   // Requêtes météo en cours, par clé de lieu.
   const controllers = useRef(new Map<string, AbortController>())
+  // Date de la dernière tentative de chargement, par clé de lieu.
+  const lastAttempts = useRef(new Map<string, number>())
 
   const cancelLoad = useCallback((key: string) => {
     controllers.current.get(key)?.abort()
@@ -94,6 +98,7 @@ export function useCities(): UseCitiesResult {
     controllers.current.get(key)?.abort()
     const controller = new AbortController()
     controllers.current.set(key, controller)
+    lastAttempts.current.set(key, Date.now())
 
     fetchWeather(location, controller.signal)
       .then((data) => {
@@ -136,6 +141,48 @@ export function useCities(): UseCitiesResult {
     }
   }, [locations, activeIndex, entries, load])
 
+  // Dernier état connu, lisible depuis les écouteurs sans les réabonner à chaque rendu.
+  const latest = useRef({ locations, activeIndex, entries })
+  useEffect(() => {
+    latest.current = { locations, activeIndex, entries }
+  })
+
+  // Actualisation automatique : au retour au premier plan, au retour du réseau, puis
+  // régulièrement tant que l'application reste affichée.
+  useEffect(() => {
+    const refreshStale = (networkIsBack: boolean) => {
+      if (document.visibilityState !== 'visible' || !navigator.onLine) return
+      const state = latest.current
+
+      for (let index = state.activeIndex - 1; index <= state.activeIndex + 1; index += 1) {
+        const location = state.locations[index]
+        if (!location) continue
+        const key = getLocationKey(location)
+        const entry = state.entries[key]
+        if (!entry || entry.status === 'loading' || controllers.current.has(key)) continue
+
+        const isStale = Date.now() - (lastAttempts.current.get(key) ?? 0) > STALE_AFTER_MS
+        const needsNetwork = !entry.data || entry.data.isFromCache
+        if (isStale || (networkIsBack && needsNetwork)) {
+          markLoading(key)
+          load(location)
+        }
+      }
+    }
+
+    const handleVisibilityChange = () => refreshStale(false)
+    const handleOnline = () => refreshStale(true)
+    const timer = window.setInterval(() => refreshStale(false), STALE_CHECK_INTERVAL_MS)
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [load, markLoading])
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cities))
@@ -154,10 +201,14 @@ export function useCities(): UseCitiesResult {
         }
         markLoading(POSITION_KEY)
         load(position)
-        setCities((previous) => ({
-          locations: [position, ...previous.locations.filter((item) => !item.isCurrentPosition)],
-          activeIndex: 0,
-        }))
+        setCities((previous) => {
+          const existing = previous.locations.findIndex((item) => item.isCurrentPosition)
+          if (existing === -1) return { locations: [position, ...previous.locations], activeIndex: 0 }
+          return {
+            locations: previous.locations.map((item, index) => (index === existing ? position : item)),
+            activeIndex: existing,
+          }
+        })
         setNotice(null)
       })
       .catch((error: unknown) => setNotice(getErrorMessage(error)))
@@ -207,6 +258,7 @@ export function useCities(): UseCitiesResult {
       if (!location) return
       const key = getLocationKey(location)
       cancelLoad(key)
+      lastAttempts.current.delete(key)
       setEntries((previous) => {
         const next = { ...previous }
         delete next[key]
@@ -223,6 +275,24 @@ export function useCities(): UseCitiesResult {
     },
     [locations, cancelLoad],
   )
+
+  const moveLocation = useCallback((from: number, to: number) => {
+    setCities((previous) => {
+      const count = previous.locations.length
+      if (from === to || from < 0 || to < 0 || from >= count || to >= count) return previous
+
+      const reordered = [...previous.locations]
+      const [moved] = reordered.splice(from, 1)
+      reordered.splice(to, 0, moved)
+
+      // La ville affichée reste la même, même si sa place change.
+      const activeKey = getLocationKey(previous.locations[previous.activeIndex])
+      return {
+        locations: reordered,
+        activeIndex: reordered.findIndex((item) => getLocationKey(item) === activeKey),
+      }
+    })
+  }, [])
 
   const searchByName = useCallback(
     (name: string) => {
@@ -263,6 +333,7 @@ export function useCities(): UseCitiesResult {
     setActiveIndex,
     addLocation,
     removeLocation,
+    moveLocation,
     searchByName,
     locate,
     refresh,

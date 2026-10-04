@@ -78,3 +78,12 @@ export function formatLocationSubtitle(location: WeatherLocation): string {
     .filter((part): part is string => Boolean(part) && part !== location.name)
     .join(', ')
 }
+
+export function formatMillimeters(value: number): string {
+  return `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mm`
+}
+
+/** Écart en minutes entre deux heures locales ISO du même lieu. */
+export function minutesBetween(fromIsoLocal: string, toIsoLocal: string): number {
+  return Math.round((Date.parse(`${toIsoLocal}:00Z`) - Date.parse(`${fromIsoLocal}:00Z`)) / 60_000)
+}

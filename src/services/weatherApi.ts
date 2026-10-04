@@ -1,8 +1,11 @@
 import type {
+  AirQuality,
+  AirQualityResponse,
   ForecastResponse,
   GeocodingResponse,
   GeocodingResult,
   OpenMeteoErrorResponse,
+  PollenType,
   WeatherApiErrorCode,
   WeatherData,
   WeatherLocation,
@@ -10,6 +13,12 @@ import type {
 
 const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
+const AIR_QUALITY_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality'
+
+/** En-tête posé par le service worker sur les réponses servies depuis le cache hors ligne. */
+const CACHED_AT_HEADER = 'x-meteo-cached-at'
+
+const HOURS_SHOWN = 24
 
 const CURRENT_VARIABLES = [
   'temperature_2m',
@@ -40,6 +49,21 @@ const DAILY_VARIABLES = [
   'sunset',
   'uv_index_max',
   'precipitation_probability_max',
+  'precipitation_sum',
+  'wind_speed_10m_max',
+  'wind_gusts_10m_max',
+  'wind_direction_10m_dominant',
+]
+
+const POLLEN_TYPES: PollenType[] = ['alder', 'birch', 'grass', 'mugwort', 'olive', 'ragweed']
+
+const AIR_QUALITY_VARIABLES = [
+  'european_aqi',
+  'pm10',
+  'pm2_5',
+  'nitrogen_dioxide',
+  'ozone',
+  ...POLLEN_TYPES.map((type) => `${type}_pollen`),
 ]
 
 export class WeatherApiError extends Error {
@@ -76,7 +100,13 @@ function isOpenMeteoError(body: unknown): body is OpenMeteoErrorResponse {
   )
 }
 
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+interface JsonResult<T> {
+  data: T
+  /** Horodatage (ms) de mise en cache si la réponse vient du cache hors ligne, sinon `null`. */
+  cachedAt: number | null
+}
+
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<JsonResult<T>> {
   let response: Response
   try {
     response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
@@ -113,7 +143,8 @@ async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     )
   }
 
-  return body as T
+  const cachedAt = Number(response.headers.get(CACHED_AT_HEADER))
+  return { data: body as T, cachedAt: cachedAt > 0 ? cachedAt : null }
 }
 
 export function toWeatherLocation(result: GeocodingResult): WeatherLocation {
@@ -141,7 +172,7 @@ export async function searchCities(
     language: 'fr',
     format: 'json',
   })
-  const data = await fetchJson<GeocodingResponse>(`${GEOCODING_URL}?${params}`, signal)
+  const { data } = await fetchJson<GeocodingResponse>(`${GEOCODING_URL}?${params}`, signal)
   return data.results ?? []
 }
 
@@ -163,14 +194,68 @@ function isForecastResponse(body: ForecastResponse): boolean {
   )
 }
 
-function normalizeForecast(location: WeatherLocation, response: ForecastResponse): WeatherData {
+function normalizeAirQuality(response: AirQualityResponse): AirQuality | null {
+  const current = response.current
+  if (typeof current !== 'object' || current === null) return null
+
+  const pollens = POLLEN_TYPES.flatMap((type) => {
+    const value = current[`${type}_pollen`]
+    return typeof value === 'number' ? [{ type, value }] : []
+  })
+
+  return {
+    europeanAqi: current.european_aqi ?? null,
+    pm25: current.pm2_5 ?? null,
+    pm10: current.pm10 ?? null,
+    nitrogenDioxide: current.nitrogen_dioxide ?? null,
+    ozone: current.ozone ?? null,
+    pollens: pollens.length > 0 ? pollens : null,
+  }
+}
+
+async function fetchAirQuality(
+  location: WeatherLocation,
+  signal?: AbortSignal,
+): Promise<AirQuality | null> {
+  const params = new URLSearchParams({
+    latitude: location.latitude.toFixed(4),
+    longitude: location.longitude.toFixed(4),
+    current: AIR_QUALITY_VARIABLES.join(','),
+    timezone: 'auto',
+  })
+  const { data } = await fetchJson<AirQualityResponse>(`${AIR_QUALITY_URL}?${params}`, signal)
+  return normalizeAirQuality(data)
+}
+
+function normalizeForecast(
+  location: WeatherLocation,
+  response: ForecastResponse,
+  airQuality: AirQuality | null,
+  cachedAt: number | null,
+): WeatherData {
   const { current, hourly, daily } = response
+  const minutely = response.minutely_15
+
+  const hourlyAll = hourly.time.map((time, index) => ({
+    time,
+    temperature: hourly.temperature_2m[index],
+    weatherCode: hourly.weather_code[index],
+    isDay: hourly.is_day[index] === 1,
+    precipitationProbability: hourly.precipitation_probability?.[index] ?? null,
+  }))
+
+  // Les heures renvoyées commencent à minuit : on repère l'heure en cours (les heures
+  // locales ISO se comparent comme des chaînes).
+  const currentHour = current.time.slice(0, 13)
+  const firstFound = hourly.time.findIndex((time) => time.slice(0, 13) >= currentHour)
+  const first = firstFound === -1 ? hourly.time.length : firstFound
 
   return {
     location,
     timezone: response.timezone,
     timezoneAbbreviation: response.timezone_abbreviation,
-    fetchedAt: Date.now(),
+    fetchedAt: cachedAt ?? Date.now(),
+    isFromCache: cachedAt !== null,
     current: {
       time: current.time,
       temperature: current.temperature_2m,
@@ -183,16 +268,10 @@ function normalizeForecast(location: WeatherLocation, response: ForecastResponse
       windSpeed: current.wind_speed_10m,
       windDirection: current.wind_direction_10m,
       windGusts: current.wind_gusts_10m,
-      // La première heure renvoyée correspond à l'heure en cours.
-      uvIndex: hourly.uv_index?.[0] ?? daily.uv_index_max?.[0] ?? null,
+      uvIndex: hourly.uv_index?.[first] ?? daily.uv_index_max?.[0] ?? null,
     },
-    hourly: hourly.time.map((time, index) => ({
-      time,
-      temperature: hourly.temperature_2m[index],
-      weatherCode: hourly.weather_code[index],
-      isDay: hourly.is_day[index] === 1,
-      precipitationProbability: hourly.precipitation_probability?.[index] ?? null,
-    })),
+    hourly: hourlyAll.slice(first, first + HOURS_SHOWN),
+    hourlyAll,
     daily: daily.time.map((date, index) => ({
       date,
       weatherCode: daily.weather_code[index],
@@ -202,11 +281,20 @@ function normalizeForecast(location: WeatherLocation, response: ForecastResponse
       sunset: daily.sunset[index],
       uvIndexMax: daily.uv_index_max?.[index] ?? null,
       precipitationProbabilityMax: daily.precipitation_probability_max?.[index] ?? null,
+      precipitationSum: daily.precipitation_sum?.[index] ?? null,
+      windSpeedMax: daily.wind_speed_10m_max?.[index] ?? null,
+      windGustsMax: daily.wind_gusts_10m_max?.[index] ?? null,
+      windDirection: daily.wind_direction_10m_dominant?.[index] ?? null,
     })),
+    nextPrecipitation: (minutely?.time ?? []).map((time, index) => ({
+      time,
+      precipitation: minutely?.precipitation[index] ?? 0,
+    })),
+    airQuality,
   }
 }
 
-/** Météo actuelle + prévisions 24 h et 7 jours pour un lieu donné. */
+/** Météo actuelle, prévisions sur 7 jours, pluie dans les 2 heures et qualité de l'air. */
 export async function fetchWeather(
   location: WeatherLocation,
   signal?: AbortSignal,
@@ -217,15 +305,24 @@ export async function fetchWeather(
     current: CURRENT_VARIABLES.join(','),
     hourly: HOURLY_VARIABLES.join(','),
     daily: DAILY_VARIABLES.join(','),
+    minutely_15: 'precipitation',
+    forecast_minutely_15: '8',
     timezone: 'auto',
     forecast_days: '7',
-    forecast_hours: '24',
     wind_speed_unit: 'kmh',
   })
 
-  const response = await fetchJson<ForecastResponse>(`${FORECAST_URL}?${params}`, signal)
-  if (!isForecastResponse(response)) {
+  const [forecast, airQuality] = await Promise.all([
+    fetchJson<ForecastResponse>(`${FORECAST_URL}?${params}`, signal),
+    // La qualité de l'air est un complément : son échec ne doit pas masquer la météo.
+    fetchAirQuality(location, signal).catch((error: unknown) => {
+      if (isAbortError(error)) throw error
+      return null
+    }),
+  ])
+
+  if (!isForecastResponse(forecast.data)) {
     throw new WeatherApiError('invalid', 'Les données météo reçues sont incomplètes.')
   }
-  return normalizeForecast(location, response)
+  return normalizeForecast(location, forecast.data, airQuality, forecast.cachedAt)
 }

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { CityCarousel } from './components/CityCarousel';
+import { CityManager } from './components/CityManager';
 import { CityPage } from './components/CityPage';
 import { CityPager } from './components/CityPager';
 import { PwaBanners } from './components/PwaBanners';
@@ -30,6 +31,7 @@ function App() {
 		setActiveIndex,
 		addLocation,
 		removeLocation,
+		moveLocation,
 		searchByName,
 		locate,
 		refresh,
@@ -41,6 +43,8 @@ function App() {
 		dismiss: dismissInstall,
 	} = usePwaInstall();
 	const { updateAvailable, isUpdating, applyUpdate } = useServiceWorkerUpdate();
+	const [isManagingCities, setIsManagingCities] = useState(false);
+	const closeCityManager = useCallback(() => setIsManagingCities(false), []);
 
 	// Le thème suit la ville affichée.
 	const activeLocation = locations[activeIndex];
@@ -100,6 +104,7 @@ function App() {
 						locations={locations}
 						activeIndex={activeIndex}
 						onSelect={setActiveIndex}
+						onManage={() => setIsManagingCities(true)}
 					/>
 				</header>
 
@@ -145,6 +150,18 @@ function App() {
 					</a>
 				</footer>
 			</div>
+
+			{isManagingCities && hasCities && (
+				<CityManager
+					locations={locations}
+					entries={entries}
+					activeIndex={activeIndex}
+					onSelect={setActiveIndex}
+					onMove={moveLocation}
+					onRemove={removeLocation}
+					onClose={closeCityManager}
+				/>
+			)}
 
 			<PwaBanners
 				installMode={installMode}

@@ -24,8 +24,11 @@ import {
 	windDirectionLabel,
 } from '../utils/format';
 import { getWeatherLabel } from '../utils/wmoCodes';
+import { AirQualityPanel } from './AirQualityPanel';
+import { Freshness } from './Freshness';
 import { GlassCard } from './GlassCard';
 import { HourlyForecast } from './HourlyForecast';
+import { RainOutlook } from './RainOutlook';
 import { WeatherIcon } from './WeatherIcon';
 
 interface CurrentWeatherProps {
@@ -134,6 +137,11 @@ export function CurrentWeather({
 					</button>
 				</div>
 			</div>
+			<Freshness
+				fetchedAt={data.fetchedAt}
+				isFromCache={data.isFromCache}
+				className="mt-2"
+			/>
 
 			<div className="mt-3 flex items-center justify-between gap-4">
 				<div>
@@ -162,7 +170,13 @@ export function CurrentWeather({
 				/>
 			</div>
 
-			<HourlyForecast hours={data.hourly} className="mt-6" />
+			<RainOutlook
+				slots={data.nextPrecipitation}
+				currentTime={current.time}
+				className="mt-6"
+			/>
+
+			<HourlyForecast hours={data.hourly} className="mt-3" />
 
 			<div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
 				<StatTile
@@ -215,6 +229,8 @@ export function CurrentWeather({
 					}
 				/>
 			</div>
+
+			<AirQualityPanel airQuality={data.airQuality} className="mt-3" />
 
 			{today && (
 				<div className="mt-3 rounded-md border border-white/10 bg-white/10 p-4">

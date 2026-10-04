@@ -1,4 +1,9 @@
-import { ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
+import {
+	ChevronLeft,
+	ChevronRight,
+	ListOrdered,
+	Navigation,
+} from 'lucide-react';
 import { getLocationKey } from '../hooks/useCities';
 import type { WeatherLocation } from '../types/weather';
 
@@ -6,6 +11,8 @@ interface CityPagerProps {
 	locations: WeatherLocation[];
 	activeIndex: number;
 	onSelect: (index: number) => void;
+	/** Ouvre la gestion des villes (ordre, suppression). */
+	onManage: () => void;
 }
 
 const arrowClass =
@@ -16,6 +23,7 @@ export function CityPager({
 	locations,
 	activeIndex,
 	onSelect,
+	onManage,
 }: CityPagerProps) {
 	if (locations.length < 2) return null;
 
@@ -75,6 +83,16 @@ export function CityPager({
 				className={arrowClass}
 			>
 				<ChevronRight className="size-4" aria-hidden="true" />
+			</button>
+
+			<button
+				type="button"
+				onClick={onManage}
+				aria-label="Gérer mes villes"
+				title="Gérer mes villes"
+				className={`ml-1 ${arrowClass}`}
+			>
+				<ListOrdered className="size-4" aria-hidden="true" />
 			</button>
 		</nav>
 	);

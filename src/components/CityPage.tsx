@@ -35,7 +35,7 @@ export function CityPage({
 							onRefresh={onRefresh}
 							onRemove={onRemove}
 						/>
-						<DailyForecast days={data.daily} />
+						<DailyForecast days={data.daily} hours={data.hourlyAll} />
 					</>
 				) : entry?.status === 'error' ? (
 					<ErrorMessage

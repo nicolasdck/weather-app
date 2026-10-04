@@ -105,6 +105,16 @@ export interface ForecastDaily {
   sunset: string[]
   uv_index_max: (number | null)[]
   precipitation_probability_max: (number | null)[]
+  precipitation_sum: (number | null)[]
+  wind_speed_10m_max: (number | null)[]
+  wind_gusts_10m_max: (number | null)[]
+  wind_direction_10m_dominant: (number | null)[]
+}
+
+/** Précipitations par quart d'heure (interpolées hors Europe centrale). */
+export interface ForecastMinutely15 {
+  time: string[]
+  precipitation: (number | null)[]
 }
 
 export interface ForecastResponse {
@@ -121,6 +131,39 @@ export interface ForecastResponse {
   hourly: ForecastHourly
   daily_units: ForecastDailyUnits
   daily: ForecastDaily
+  minutely_15_units?: Record<string, string>
+  minutely_15?: ForecastMinutely15
+}
+
+export type PollenType = 'alder' | 'birch' | 'grass' | 'mugwort' | 'olive' | 'ragweed'
+
+export interface AirQualityCurrent {
+  time: string
+  interval: number
+  european_aqi: number | null
+  pm10: number | null
+  pm2_5: number | null
+  nitrogen_dioxide: number | null
+  ozone: number | null
+  /** Pollens en grains/m³ ; `null` hors d'Europe. */
+  alder_pollen: number | null
+  birch_pollen: number | null
+  grass_pollen: number | null
+  mugwort_pollen: number | null
+  olive_pollen: number | null
+  ragweed_pollen: number | null
+}
+
+export interface AirQualityResponse {
+  latitude: number
+  longitude: number
+  generationtime_ms: number
+  utc_offset_seconds: number
+  timezone: string
+  timezone_abbreviation: string
+  elevation: number
+  current_units: Record<keyof AirQualityCurrent, string>
+  current: AirQualityCurrent
 }
 
 /* -------------------------------------------------------------------------- */
@@ -169,6 +212,34 @@ export interface DailyForecastItem {
   sunset: string
   uvIndexMax: number | null
   precipitationProbabilityMax: number | null
+  precipitationSum: number | null
+  windSpeedMax: number | null
+  windGustsMax: number | null
+  windDirection: number | null
+}
+
+export interface PrecipitationSlot {
+  /** Début du quart d'heure, heure locale du lieu. */
+  time: string
+  /** Cumul sur le quart d'heure, en mm. */
+  precipitation: number
+}
+
+export interface PollenLevel {
+  type: PollenType
+  /** Concentration en grains/m³. */
+  value: number
+}
+
+export interface AirQuality {
+  /** Indice européen de qualité de l'air (0 = excellent, 100+ = très mauvais). */
+  europeanAqi: number | null
+  pm25: number | null
+  pm10: number | null
+  nitrogenDioxide: number | null
+  ozone: number | null
+  /** `null` lorsque les pollens ne sont pas couverts (hors Europe). */
+  pollens: PollenLevel[] | null
 }
 
 export interface WeatherData {
@@ -176,10 +247,19 @@ export interface WeatherData {
   timezone: string
   timezoneAbbreviation: string
   current: CurrentConditions
+  /** Les 24 prochaines heures, à partir de l'heure en cours. */
   hourly: HourlyForecastItem[]
+  /** Toutes les heures des 7 jours, pour le détail d'une journée. */
+  hourlyAll: HourlyForecastItem[]
   daily: DailyForecastItem[]
-  /** Horodatage (ms) de la récupération des données. */
+  /** Les 2 prochaines heures, par quart d'heure. */
+  nextPrecipitation: PrecipitationSlot[]
+  /** `null` si la qualité de l'air n'a pas pu être récupérée. */
+  airQuality: AirQuality | null
+  /** Horodatage (ms) de la récupération des données auprès d'Open-Meteo. */
   fetchedAt: number
+  /** Vrai si les données viennent du cache hors ligne et non du réseau. */
+  isFromCache: boolean
 }
 
 export type WeatherStatus = 'loading' | 'success' | 'error'
