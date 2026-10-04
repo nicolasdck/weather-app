@@ -15,7 +15,8 @@ export function HourlyForecast({ hours }: HourlyForecastProps) {
       title="Prochaines 24 heures"
       icon={<Clock className="size-4" aria-hidden="true" />}
     >
-      <ul className="scrollbar-none -mx-5 flex snap-x gap-2 overflow-x-auto scroll-px-5 px-5 pb-1">
+      {/* `relative` : garde les libellés sr-only (absolus) dans la zone de défilement. */}
+      <ul className="scrollbar-none relative -mx-5 flex snap-x gap-2 overflow-x-auto scroll-px-5 px-5 pb-1">
         {hours.map((hour, index) => {
           const rain = hour.precipitationProbability
           return (

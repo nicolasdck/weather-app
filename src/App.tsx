@@ -34,7 +34,7 @@ function App() {
   }, [isNight])
 
   return (
-    <div className="relative min-h-dvh text-white">
+    <div className="relative min-h-dvh overflow-x-clip text-white">
       {/* Deux fonds superposés pour un fondu entre les thèmes jour et nuit. */}
       <div
         aria-hidden="true"
