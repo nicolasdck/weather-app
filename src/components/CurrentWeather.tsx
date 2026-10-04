@@ -25,6 +25,7 @@ import {
 } from '../utils/format'
 import { getWeatherLabel } from '../utils/wmoCodes'
 import { GlassCard } from './GlassCard'
+import { HourlyForecast } from './HourlyForecast'
 import { WeatherIcon } from './WeatherIcon'
 
 interface CurrentWeatherProps {
@@ -146,7 +147,9 @@ export function CurrentWeather({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <HourlyForecast hours={data.hourly} className="mt-6" />
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile
           icon={<Droplets className="size-4" aria-hidden="true" />}
           label="Humidité"

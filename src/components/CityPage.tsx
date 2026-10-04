@@ -1,7 +1,6 @@
 import type { WeatherEntry, WeatherLocation } from '../types/weather'
 import { CurrentWeather } from './CurrentWeather'
 import { DailyForecast } from './DailyForecast'
-import { HourlyForecast } from './HourlyForecast'
 import { ErrorMessage } from './StatusMessages'
 import { WeatherSkeleton } from './WeatherSkeleton'
 
@@ -28,7 +27,6 @@ export function CityPage({ location, entry, onRefresh, onRemove }: CityPageProps
               onRefresh={onRefresh}
               onRemove={onRemove}
             />
-            <HourlyForecast hours={data.hourly} />
             <DailyForecast days={data.daily} />
           </>
         ) : entry?.status === 'error' ? (

@@ -2,21 +2,23 @@ import { Clock, Droplet } from 'lucide-react'
 import type { HourlyForecastItem } from '../types/weather'
 import { formatHour, formatTemperature } from '../utils/format'
 import { getWeatherLabel } from '../utils/wmoCodes'
-import { GlassCard } from './GlassCard'
 import { WeatherIcon } from './WeatherIcon'
 
 interface HourlyForecastProps {
   hours: HourlyForecastItem[]
+  className?: string
 }
 
-export function HourlyForecast({ hours }: HourlyForecastProps) {
+/** Panneau des prochaines 24 heures, affiché dans la carte de la météo actuelle. */
+export function HourlyForecast({ hours, className = '' }: HourlyForecastProps) {
   return (
-    <GlassCard
-      title="Prochaines 24 heures"
-      icon={<Clock className="size-4" aria-hidden="true" />}
-    >
+    <section className={`rounded-2xl border border-white/10 bg-white/10 p-4 ${className}`}>
+      <h2 className="mb-3 flex items-center gap-2 text-xs font-medium tracking-wide text-white/65 uppercase">
+        <Clock className="size-4" aria-hidden="true" />
+        Prochaines 24 heures
+      </h2>
       {/* `relative` : garde les libellés sr-only (absolus) dans la zone de défilement. */}
-      <ul className="scrollbar-none relative -mx-5 flex snap-x gap-2 overflow-x-auto overscroll-x-contain scroll-px-5 px-5 pb-1">
+      <ul className="scrollbar-none relative -mx-4 flex snap-x gap-2 overflow-x-auto overscroll-x-contain scroll-px-4 px-4">
         {hours.map((hour, index) => {
           const rain = hour.precipitationProbability
           return (
@@ -53,6 +55,6 @@ export function HourlyForecast({ hours }: HourlyForecastProps) {
           )
         })}
       </ul>
-    </GlassCard>
+    </section>
   )
 }

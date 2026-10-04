@@ -25,21 +25,13 @@ export function WeatherSkeleton() {
           </div>
           <Bone className="size-24 rounded-full sm:size-32" />
         </div>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Bone className="mt-6 h-46.5 rounded-2xl" />
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
-            <Bone key={index} className="h-[104px] rounded-2xl" />
+            <Bone key={index} className="h-26 rounded-2xl" />
           ))}
         </div>
-        <Bone className="mt-3 h-[70px] rounded-2xl" />
-      </GlassCard>
-
-      <GlassCard>
-        <Bone className="mb-4 h-4 w-40" />
-        <div className="flex gap-2 overflow-hidden">
-          {Array.from({ length: 10 }, (_, index) => (
-            <Bone key={index} className="h-[124px] w-16 shrink-0 rounded-2xl" />
-          ))}
-        </div>
+        <Bone className="mt-3 h-17.5 rounded-2xl" />
       </GlassCard>
 
       <GlassCard>
