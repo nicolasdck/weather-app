@@ -28,6 +28,7 @@ import { AirQualityPanel } from './AirQualityPanel';
 import { Freshness } from './Freshness';
 import { GlassCard } from './GlassCard';
 import { HourlyForecast } from './HourlyForecast';
+import { RadarButton } from './RadarButton';
 import { RainOutlook } from './RainOutlook';
 import { WeatherIcon } from './WeatherIcon';
 
@@ -174,6 +175,12 @@ export function CurrentWeather({
 				slots={data.nextPrecipitation}
 				currentTime={current.time}
 				className="mt-6"
+			/>
+
+			<RadarButton
+				location={location}
+				timezone={data.timezone}
+				className="mt-3"
 			/>
 
 			<HourlyForecast hours={data.hourly} className="mt-3" />
