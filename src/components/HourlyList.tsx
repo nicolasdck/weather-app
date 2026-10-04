@@ -1,6 +1,7 @@
 import { Droplet } from 'lucide-react';
 import type { HourlyForecastItem } from '../types/weather';
-import { formatHour, formatTemperature } from '../utils/format';
+import { useUnits } from '../hooks/useUnits';
+import { formatHour } from '../utils/format';
 import { getWeatherLabel } from '../utils/wmoCodes';
 import { WeatherIcon } from './WeatherIcon';
 
@@ -17,6 +18,8 @@ export function HourlyList({
 	startsNow = false,
 	className = '',
 }: HourlyListProps) {
+	const { formatTemperature } = useUnits();
+
 	return (
 		// `relative` : garde les libellés sr-only (absolus) dans la zone de défilement.
 		<ul

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { CityCarousel } from './components/CityCarousel';
 import { CityManager } from './components/CityManager';
 import { CityPage } from './components/CityPage';
 import { CityPager } from './components/CityPager';
 import { PwaBanners } from './components/PwaBanners';
 import { SearchBar } from './components/SearchBar';
+import { SettingsModal } from './components/SettingsModal';
 import { EmptyState } from './components/StatusMessages';
+import { WeatherBackdrop } from './components/WeatherBackdrop';
 import { WeatherSkeleton } from './components/WeatherSkeleton';
 import { getLocationKey, useCities } from './hooks/useCities';
 import { usePwaInstall } from './hooks/usePwaInstall';
@@ -45,6 +47,8 @@ function App() {
 	const { updateAvailable, isUpdating, applyUpdate } = useServiceWorkerUpdate();
 	const [isManagingCities, setIsManagingCities] = useState(false);
 	const closeCityManager = useCallback(() => setIsManagingCities(false), []);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
 
 	// Le thème suit la ville affichée.
 	const activeLocation = locations[activeIndex];
@@ -73,15 +77,32 @@ function App() {
 					isNight ? 'opacity-100' : 'opacity-0'
 				}`}
 			/>
+			<WeatherBackdrop
+				weatherCode={activeData ? activeData.current.weatherCode : null}
+				isNight={isNight}
+			/>
 
 			<div className="flex min-h-dvh flex-col gap-1.5 py-2">
 				<header className="mx-auto w-full max-w-2xl space-y-2 px-2">
-					<SearchBar
-						onSelect={addLocation}
-						onSubmitQuery={searchByName}
-						onLocate={locate}
-						isBusy={isBusy}
-					/>
+					<div className="flex items-start gap-2">
+						<div className="min-w-0 flex-1">
+							<SearchBar
+								onSelect={addLocation}
+								onSubmitQuery={searchByName}
+								onLocate={locate}
+								isBusy={isBusy}
+							/>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsSettingsOpen(true)}
+							aria-label="Réglages"
+							title="Réglages"
+							className="grid size-12 shrink-0 place-items-center rounded-md border border-white/20 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white/25 active:scale-95"
+						>
+							<Settings className="size-5" aria-hidden="true" />
+						</button>
+					</div>
 
 					{notice && hasCities && (
 						<div
@@ -162,6 +183,8 @@ function App() {
 					onClose={closeCityManager}
 				/>
 			)}
+
+			{isSettingsOpen && <SettingsModal onClose={closeSettings} />}
 
 			<PwaBanners
 				installMode={installMode}

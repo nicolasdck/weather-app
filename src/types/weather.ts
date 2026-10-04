@@ -246,6 +246,8 @@ export interface WeatherData {
   location: WeatherLocation
   timezone: string
   timezoneAbbreviation: string
+  /** Décalage du lieu par rapport à UTC, en secondes. */
+  utcOffsetSeconds: number
   current: CurrentConditions
   /** Les 24 prochaines heures, à partir de l'heure en cours. */
   hourly: HourlyForecastItem[]

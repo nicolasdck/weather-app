@@ -45,6 +45,39 @@ interface RadarModalProps {
 	onClose: () => void;
 }
 
+// Palette « Universal Blue » de RainViewer, de 15 à 60 dBZ.
+const LEGEND_COLORS = [
+	'#88ddee',
+	'#00a3e0',
+	'#0077aa',
+	'#005588',
+	'#ffee00',
+	'#ffaa00',
+	'#ff4400',
+	'#c10000',
+	'#ff77ff',
+];
+
+function RadarLegend() {
+	return (
+		<div className="mb-3">
+			<div
+				aria-hidden="true"
+				className="h-1.5 rounded-sm"
+				style={{
+					background: `linear-gradient(to right, ${LEGEND_COLORS.join(', ')})`,
+				}}
+			/>
+			<p className="mt-1 flex justify-between text-[11px] text-white/65">
+				<span>Pluie faible</span>
+				<span>Modérée</span>
+				<span>Forte</span>
+				<span>Grêle</span>
+			</p>
+		</div>
+	);
+}
+
 function prefersReducedMotion(): boolean {
 	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -205,6 +238,7 @@ export default function RadarModal({
 			</div>
 
 			<div className="px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+				<RadarLegend />
 				{error ? (
 					<p role="alert" className="text-sm text-amber-100">
 						{error}

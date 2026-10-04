@@ -13,12 +13,12 @@ import {
 	Trash2,
 	Wind,
 } from 'lucide-react';
+import { useUnits } from '../hooks/useUnits';
 import type { WeatherData } from '../types/weather';
 import {
 	formatClock,
 	formatDuration,
 	formatLocationSubtitle,
-	formatTemperature,
 	minutesOfDay,
 	uvLabel,
 	windDirectionLabel,
@@ -28,6 +28,8 @@ import { AirQualityPanel } from './AirQualityPanel';
 import { Freshness } from './Freshness';
 import { GlassCard } from './GlassCard';
 import { HourlyForecast } from './HourlyForecast';
+import { MoonPanel } from './MoonPanel';
+import { NormalComparison } from './NormalComparison';
 import { RadarButton } from './RadarButton';
 import { RainOutlook } from './RainOutlook';
 import { WeatherIcon } from './WeatherIcon';
@@ -70,6 +72,7 @@ export function CurrentWeather({
 	onRefresh,
 	onRemove,
 }: CurrentWeatherProps) {
+	const { formatTemperature, formatWind } = useUnits();
 	const { current, location, daily } = data;
 	const today = daily[0];
 	const subtitle = formatLocationSubtitle(location);
@@ -171,6 +174,16 @@ export function CurrentWeather({
 				/>
 			</div>
 
+			{today && (
+				<NormalComparison
+					key={`${location.latitude},${location.longitude},${today.date}`}
+					location={location}
+					date={today.date}
+					todayMax={today.temperatureMax}
+					className="mt-3"
+				/>
+			)}
+
 			<RainOutlook
 				slots={data.nextPrecipitation}
 				currentTime={current.time}
@@ -199,7 +212,7 @@ export function CurrentWeather({
 				<StatTile
 					icon={<Wind className="size-4" aria-hidden="true" />}
 					label="Vent"
-					value={`${Math.round(current.windSpeed)} km/h`}
+					value={formatWind(current.windSpeed)}
 					detail={
 						<span className="flex items-center gap-1.5">
 							{/* La flèche pointe vers la provenance du vent, comme le libellé (N = vers le haut). */}
@@ -211,7 +224,7 @@ export function CurrentWeather({
 								aria-hidden="true"
 							/>
 							{windDirectionLabel(current.windDirection)} · rafales{' '}
-							{Math.round(current.windGusts)} km/h
+							{formatWind(current.windGusts)}
 						</span>
 					}
 				/>
@@ -270,6 +283,8 @@ export function CurrentWeather({
 					</div>
 				</div>
 			)}
+
+			<MoonPanel data={data} className="mt-3" />
 		</GlassCard>
 	);
 }

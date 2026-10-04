@@ -16,10 +16,6 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-export function formatTemperature(value: number): string {
-  return `${Math.round(value)}°`
-}
-
 /** `2026-10-04T14:00` → `14 h` */
 export function formatHour(isoLocal: string): string {
   return `${isoLocal.slice(11, 13)} h`

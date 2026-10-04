@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { getLocationKey } from '../hooks/useCities';
 import type { WeatherEntry, WeatherLocation } from '../types/weather';
-import { formatLocationSubtitle, formatTemperature } from '../utils/format';
+import { useUnits } from '../hooks/useUnits';
+import { formatLocationSubtitle } from '../utils/format';
 
 interface CityManagerProps {
 	locations: WeatherLocation[];
@@ -34,6 +35,8 @@ export function CityManager({
 	onRemove,
 	onClose,
 }: CityManagerProps) {
+	const { formatTemperature } = useUnits();
+
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') onClose();

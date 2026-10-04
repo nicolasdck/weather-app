@@ -254,6 +254,7 @@ function normalizeForecast(
     location,
     timezone: response.timezone,
     timezoneAbbreviation: response.timezone_abbreviation,
+    utcOffsetSeconds: response.utc_offset_seconds,
     fetchedAt: cachedAt ?? Date.now(),
     isFromCache: cachedAt !== null,
     current: {

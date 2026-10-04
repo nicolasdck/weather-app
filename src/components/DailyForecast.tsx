@@ -10,13 +10,13 @@ import {
 	Sunrise,
 	Wind,
 } from 'lucide-react';
+import { useUnits } from '../hooks/useUnits';
 import type { DailyForecastItem, HourlyForecastItem } from '../types/weather';
 import {
 	formatClock,
 	formatDayLabel,
 	formatDayMonth,
 	formatMillimeters,
-	formatTemperature,
 	uvLabel,
 	windDirectionLabel,
 } from '../utils/format';
@@ -55,6 +55,7 @@ interface DayDetailsProps {
 }
 
 function DayDetails({ day, hours }: DayDetailsProps) {
+	const { formatWind, formatWindValue } = useUnits();
 	const rain = day.precipitationProbabilityMax;
 
 	return (
@@ -77,7 +78,7 @@ function DayDetails({ day, hours }: DayDetailsProps) {
 						'—'
 					) : (
 						<span className="flex flex-wrap items-center gap-x-1.5">
-							{Math.round(day.windSpeedMax)} km/h
+							{formatWind(day.windSpeedMax)}
 							{day.windDirection !== null && (
 								<span className="flex items-center gap-1">
 									<Navigation2
@@ -90,7 +91,7 @@ function DayDetails({ day, hours }: DayDetailsProps) {
 							)}
 							{day.windGustsMax !== null && (
 								<span className="text-white/65">
-									rafales {Math.round(day.windGustsMax)}
+									rafales {formatWindValue(day.windGustsMax)}
 								</span>
 							)}
 						</span>
@@ -123,6 +124,7 @@ function DayDetails({ day, hours }: DayDetailsProps) {
 }
 
 export function DailyForecast({ days, hours }: DailyForecastProps) {
+	const { formatTemperature } = useUnits();
 	const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
 	const weekMin = Math.min(...days.map((day) => day.temperatureMin));

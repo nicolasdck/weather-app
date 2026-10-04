@@ -41,6 +41,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -48,4 +49,78 @@
 /* Radar : assombrit les tuiles OpenStreetMap (claires) pour faire ressortir les précipitations. */
 .radar-basemap-dark {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6);
+}
+
+/* Fond animé (WeatherBackdrop). */
+@keyframes backdrop-rain {
+  from {
+    transform: translate3d(0, -20vh, 0);
+  }
+  to {
+    transform: translate3d(-6vh, 120vh, 0);
+  }
+}
+
+@keyframes backdrop-snow {
+  0% {
+    transform: translate3d(0, -5vh, 0);
+  }
+  50% {
+    transform: translate3d(3vw, 55vh, 0);
+  }
+  100% {
+    transform: translate3d(-2vw, 112vh, 0);
+  }
+}
+
+@keyframes backdrop-drift {
+  from {
+    transform: translate3d(-90vw, 0, 0);
+  }
+  to {
+    transform: translate3d(110vw, 0, 0);
+  }
+}
+
+@keyframes backdrop-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+/* Deux éclairs brefs par cycle, bien en dessous des seuils de clignotement gênants. */
+@keyframes backdrop-flash {
+  0%,
+  90%,
+  100% {
+    opacity: 0;
+  }
+  91% {
+    opacity: 0.3;
+  }
+  92.5% {
+    opacity: 0.05;
+  }
+  94% {
+    opacity: 0.22;
+  }
+  96% {
+    opacity: 0;
+  }
 }

@@ -1,6 +1,7 @@
 import { Clock } from 'lucide-react';
 import type { HourlyForecastItem } from '../types/weather';
 import { HourlyList } from './HourlyList';
+import { TemperatureChart } from './TemperatureChart';
 
 interface HourlyForecastProps {
 	hours: HourlyForecastItem[];
@@ -17,6 +18,7 @@ export function HourlyForecast({ hours, className = '' }: HourlyForecastProps) {
 				<Clock className="size-4" aria-hidden="true" />
 				Prochaines 24 heures
 			</h2>
+			<TemperatureChart hours={hours} className="mb-3 px-1" />
 			<HourlyList hours={hours} startsNow className="-mx-4 scroll-px-4 px-4" />
 		</section>
 	);
